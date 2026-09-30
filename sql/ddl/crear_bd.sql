@@ -111,7 +111,7 @@ CREATE TABLE sesiones_caja (
 GO
 
 -- ---------------------------------------------------------------------
--- 3. VENTAS
+-- VENTAS
 -- ---------------------------------------------------------------------
 CREATE TABLE ventas (
     id_venta           INT IDENTITY(1,1) NOT NULL,
@@ -134,7 +134,7 @@ CREATE TABLE ventas (
 GO
 
 -- ---------------------------------------------------------------------
--- 4. COMPRAS
+-- COMPRAS
 -- ---------------------------------------------------------------------
 CREATE TABLE compras (
     id_compra                 INT IDENTITY(1,1) NOT NULL,
@@ -146,3 +146,71 @@ CREATE TABLE compras (
         REFERENCES personas (id_persona) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 GO
+    
+-- PAGOS_VENTA: una venta puede saldarse con varios medios de pago (RF07).
+-- Si se elimina la venta, sus pagos se eliminan con ella (RNF02).
+CREATE TABLE pagos_venta (
+    numero_transaccion VARCHAR(30)   NOT NULL,
+    metodo_pago        VARCHAR(20)   NOT NULL,
+    monto              DECIMAL(12,2) NOT NULL,
+    id_venta           INT           NOT NULL,
+    CONSTRAINT pk_pagos_venta PRIMARY KEY (numero_transaccion),
+    CONSTRAINT fk_pago_venta FOREIGN KEY (id_venta)
+        REFERENCES ventas (id_venta)
+        ON DELETE CASCADE ON UPDATE NO ACTION,
+    CONSTRAINT ck_pagos_metodo CHECK (metodo_pago IN
+        ('EFECTIVO', 'TARJETA_DEBITO', 'TARJETA_CREDITO', 'TRANSFERENCIA', 'MERCADO_PAGO')),
+    CONSTRAINT ck_pagos_monto CHECK (monto > 0)
+);
+GO
+
+-- ---------------------------------------------------------------------
+--  ENTIDADES DE DETALLE (relaciones N:M, PK compuesta)
+-- ---------------------------------------------------------------------
+
+-- DETALLES_VENTA: precio_unitario_historico queda congelado (RN01).
+CREATE TABLE detalles_venta (
+    id_venta                  INT           NOT NULL,
+    id_producto               INT           NOT NULL,
+    cantidad                  INT           NOT NULL,
+    precio_unitario_historico DECIMAL(10,2) NOT NULL,
+    CONSTRAINT pk_detalles_venta PRIMARY KEY (id_venta, id_producto),
+    CONSTRAINT fk_detventa_venta FOREIGN KEY (id_venta)
+        REFERENCES ventas (id_venta)
+        ON DELETE CASCADE ON UPDATE NO ACTION,
+    CONSTRAINT fk_detventa_producto FOREIGN KEY (id_producto)
+        REFERENCES productos (id_producto)
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT ck_detventa_cantidad CHECK (cantidad > 0),
+    CONSTRAINT ck_detventa_precio CHECK (precio_unitario_historico >= 0)
+);
+GO
+
+CREATE TABLE detalles_compra (
+    id_compra                INT           NOT NULL,
+    id_producto              INT           NOT NULL,
+    cantidad                 INT           NOT NULL,
+    costo_unitario_historico DECIMAL(10,2) NOT NULL,
+    CONSTRAINT pk_detalles_compra PRIMARY KEY (id_compra, id_producto),
+    CONSTRAINT fk_detcompra_compra FOREIGN KEY (id_compra)
+        REFERENCES compras (id_compra)
+        ON DELETE CASCADE ON UPDATE NO ACTION,
+    CONSTRAINT fk_detcompra_producto FOREIGN KEY (id_producto)
+        REFERENCES productos (id_producto)
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT ck_detcompra_cantidad CHECK (cantidad > 0),
+    CONSTRAINT ck_detcompra_costo CHECK (costo_unitario_historico >= 0)
+);
+GO
+
+-- ---------------------------------------------------------------------
+--  ÍNDICES sobre claves foráneas usadas en JOINs frecuentes
+--  (SQL Server no crea índices automáticos sobre las FK)
+-- ---------------------------------------------------------------------
+CREATE INDEX idx_ventas_fecha       ON ventas (fecha_hora);
+CREATE INDEX idx_ventas_sesion      ON ventas (id_sesion);
+CREATE INDEX idx_pagos_venta        ON pagos_venta (id_venta);
+CREATE INDEX idx_detventa_producto  ON detalles_venta (id_producto);
+CREATE INDEX idx_detcompra_producto ON detalles_compra (id_producto);
+GO
+
