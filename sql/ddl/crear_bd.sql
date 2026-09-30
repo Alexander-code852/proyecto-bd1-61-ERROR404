@@ -76,3 +76,36 @@ CREATE UNIQUE INDEX uq_productos_codigo_barras
     ON productos (codigo_barras)
     WHERE codigo_barras IS NOT NULL;
 GO
+
+-- ---------------------------------------------------------------------
+--  CAJAS
+-- ---------------------------------------------------------------------
+CREATE TABLE cajas (
+    id_caja      INT IDENTITY(1,1) NOT NULL,
+    numero_caja  INT NOT NULL,
+    estado       VARCHAR(20) NOT NULL CONSTRAINT df_cajas_estado DEFAULT 'CERRADA',
+    CONSTRAINT pk_cajas PRIMARY KEY (id_caja),
+    CONSTRAINT uq_cajas_numero UNIQUE (numero_caja),
+    CONSTRAINT ck_cajas_estado CHECK (estado IN ('ABIERTA', 'CERRADA', 'EN_MANTENIMIENTO'))
+);
+GO
+
+-- ---------------------------------------------------------------------
+--  SESIONES_CAJA
+-- ---------------------------------------------------------------------
+CREATE TABLE sesiones_caja (
+    id_sesion              INT IDENTITY(1,1) NOT NULL,
+    fecha_hora_apertura    DATETIME NOT NULL CONSTRAINT df_sesiones_apertura DEFAULT GETDATE(),
+    fecha_hora_cierre      DATETIME NULL,
+    monto_inicial_efectivo DECIMAL(10,2) NOT NULL,
+    monto_final_efectivo    DECIMAL(10,2) NULL,
+    id_empleado_cajero     INT NOT NULL,
+    id_caja                INT NOT NULL,
+    CONSTRAINT pk_sesiones_caja PRIMARY KEY (id_sesion),
+    CONSTRAINT fk_sesiones_personas FOREIGN KEY (id_empleado_cajero)
+        REFERENCES personas (id_persona) ON DELETE NO ACTION ON UPDATE CASCADE,
+    CONSTRAINT fk_sesiones_cajas FOREIGN KEY (id_caja)
+        REFERENCES cajas (id_caja) ON DELETE NO ACTION ON UPDATE CASCADE,
+    CONSTRAINT ck_sesiones_monto_inicial CHECK (monto_inicial_efectivo >= 0)
+);
+GO
