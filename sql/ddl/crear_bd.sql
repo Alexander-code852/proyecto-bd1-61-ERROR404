@@ -109,3 +109,40 @@ CREATE TABLE sesiones_caja (
     CONSTRAINT ck_sesiones_monto_inicial CHECK (monto_inicial_efectivo >= 0)
 );
 GO
+
+-- ---------------------------------------------------------------------
+-- 3. VENTAS
+-- ---------------------------------------------------------------------
+CREATE TABLE ventas (
+    id_venta           INT IDENTITY(1,1) NOT NULL,
+    numero_comprobante VARCHAR(20) NOT NULL,
+    fecha_hora         DATETIME NOT NULL CONSTRAINT df_ventas_fecha DEFAULT GETDATE(),
+    estado             VARCHAR(15) NOT NULL CONSTRAINT df_ventas_estado DEFAULT 'COMPLETADA',
+    id_cliente         INT NOT NULL,
+    id_vendedor        INT NOT NULL,
+    id_sesion          INT NOT NULL,
+    CONSTRAINT pk_ventas PRIMARY KEY (id_venta),
+    CONSTRAINT uq_ventas_comprobante UNIQUE (numero_comprobante),
+    CONSTRAINT fk_ventas_cliente FOREIGN KEY (id_cliente)
+        REFERENCES personas (id_persona) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_ventas_vendedor FOREIGN KEY (id_vendedor)
+        REFERENCES personas (id_persona) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_ventas_sesion FOREIGN KEY (id_sesion)
+        REFERENCES sesiones_caja (id_sesion) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT ck_ventas_estado CHECK (estado IN ('PENDIENTE', 'COMPLETADA', 'ANULADA'))
+);
+GO
+
+-- ---------------------------------------------------------------------
+-- 4. COMPRAS
+-- ---------------------------------------------------------------------
+CREATE TABLE compras (
+    id_compra                 INT IDENTITY(1,1) NOT NULL,
+    numero_factura_proveedor  VARCHAR(30) NOT NULL,
+    fecha_hora                DATETIME NOT NULL CONSTRAINT df_compras_fecha DEFAULT GETDATE(),
+    id_proveedor              INT NOT NULL,
+    CONSTRAINT pk_compras PRIMARY KEY (id_compra),
+    CONSTRAINT fk_compras_proveedor FOREIGN KEY (id_proveedor)
+        REFERENCES personas (id_persona) ON DELETE RESTRICT ON UPDATE CASCADE
+);
+GO
