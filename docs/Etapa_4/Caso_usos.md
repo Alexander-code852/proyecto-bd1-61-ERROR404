@@ -38,9 +38,9 @@ El presente documento detalla la especificación técnica, el análisis de negoc
 
 ### 2.1. CASO DE USO 1: Comprobante / Factura de Venta Detallada
 
-* **Archivo de Origen:** `sql/consultas/comprobante.sql`
+**Archivo de Origen:** `sql/consultas/comprobante.sql`
 
-* **Autor:** Gustavo Gabriel Gabutti (DNI: 46064849)
+**Autor:** Gustavo Gabriel Gabutti (DNI: 46064849)
 
 #### A. Propósito de Negocio
 
@@ -48,7 +48,7 @@ Generar la vista detallada de facturación para la impresión o emisión digital
 
 #### B. Análisis y Justificación Técnica de la Consulta
 
-* **Multi-Tablas (`INNER JOIN`):**
+**Multi-Tablas (`INNER JOIN`):**
 
   * `ventas v INNER JOIN personas c ON v.id_cliente = c.id_persona`: Vincula la cabecera de la venta con los datos identificatorios del cliente.
 
@@ -58,11 +58,10 @@ Generar la vista detallada de facturación para la impresión o emisión digital
 
   * `INNER JOIN productos p ON dv.id_producto = p.id_producto`: Obtiene la descripción textual y marca del producto/servicio.
 
-* **Cálculo de Subtotal por Renglón:** `(dv.cantidad * dv.precio_unitario_historico)`
+ **Cálculo de Subtotal por Renglón:** `(dv.cantidad * dv.precio_unitario_historico)`
 
   * Aplica la constante del precio de la venta respetando **RN01**, garantizando que variaciones futuras de la tabla `productos` no alteren comprobantes históricos.
-
-* **Subconsulta Correlacionada para Total General:**
+ **Subconsulta Correlacionada para Total General:**
 
   * `(SELECT SUM(dvsub.cantidad * dvsub.precio_unitario_historico) FROM detalles_venta dvsub WHERE dvsub.id_venta = v.id_venta)`
 
@@ -70,9 +69,9 @@ Generar la vista detallada de facturación para la impresión o emisión digital
 
 #### C. Ejemplo de Datos de Entrada y Salida Esperada (basado en `id_venta = 1` del DML)
 
-* **Entrada (DML):** `id_venta = 1`, Cliente: Martín Gómez (ID 1), Vendedor: Diego Ruiz (ID 6), Ítems: 3x Cuaderno espiralado (\$3.200,00) y 10x Lapicera azul ($450,00).
+**Entrada (DML):** `id_venta = 1`, Cliente: Martín Gómez (ID 1), Vendedor: Diego Ruiz (ID 6), Ítems: 3x Cuaderno espiralado (\$3.200,00) y 10x Lapicera azul ($450,00).
 
-* **Salida del Motor SQL:**
+**Salida del Motor SQL:**
 
 | Nro Comprobante | Fecha Hora Emisión | Cliente | Email Cliente | Vendedor Atendió | Producto / Servicio | Marca | Cantidad | Precio Unit. Histórico | Subtotal Renglón | Total General Comprobante | 
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | 
@@ -83,17 +82,17 @@ Generar la vista detallada de facturación para la impresión o emisión digital
 
 #### D. Caso de Prueba QA
 
-* **ID Prueba:** `QA-TC-01`
+ **ID Prueba:** `QA-TC-01`
 
-* **Criterio:** Verificar la concordancia entre la suma de los renglones y la subconsulta de totalización.
+ **Criterio:** Verificar la concordancia entre la suma de los renglones y la subconsulta de totalización.
 
-* **Resultado:** **APROBADO.** La subconsulta correlacionada no genera bloqueos de rendimiento gracias a la clave primaria compuesta `(id_venta, id_producto)` de `detalles_venta`.
+ **Resultado:** **APROBADO.** La subconsulta correlacionada no genera bloqueos de rendimiento gracias a la clave primaria compuesta `(id_venta, id_producto)` de `detalles_venta`.
 
 ### 2.2. CASO DE USO 2: Reporte Agregado de Ventas (Por Vendedor y Categoría/Producto)
 
-* **Archivo de Origen:** `sql/consultas/informes.sql`
+ **Archivo de Origen:** `sql/consultas/informes.sql`
 
-* **Autor:** Araceli Estefany Arredondo Vera (DNI: 49262230)
+ **Autor:** Araceli Estefany Arredondo Vera (DNI: 49262230)
 
 #### A. Propósito de Negocio
 
@@ -107,13 +106,13 @@ Brindar herramientas de Business Intelligence (BI) para el nivel gerencial. Ofre
 
 ##### Reporte 1: Ventas por Vendedor (Uso de CTE)
 
-* **Common Table Expression (CTE) `VentasCalculadas`:**
+ **Common Table Expression (CTE) `VentasCalculadas`:**
 
   * Agrupa en primera instancia los datos a nivel de comprobante (`v.id_venta`, `v.id_vendedor`), sumando el total de cada venta.
 
   * **Filtro crítico en CTE:** `v.estado = 'CONFIRMADA'` y filtro de rango `@FechaInicio` a `@FechaFin`. Esto garantiza que facturas anuladas o pendientes no ensucien los indicadores de desempeño.
 
-* **Consulta Principal sobre el CTE:**
+ **Consulta Principal sobre el CTE:**
 
   * Realiza `INNER JOIN` con `personas p` para recuperar el nombre del vendedor.
 
@@ -125,15 +124,15 @@ Brindar herramientas de Business Intelligence (BI) para el nivel gerencial. Ofre
 
     * `AVG(vc.total_venta)`: Cálculo exacto del **Ticket Promedio** por venta atendida.
 
-* **Justificación Arquitectural:** Calcular el total de cada comprobante *antes* de unir con la tabla de personas evita el sesgo en el cálculo del promedio que sucedería si se agruparan renglones sueltos de artículos.
+ **Justificación Arquitectural:** Calcular el total de cada comprobante *antes* de unir con la tabla de personas evita el sesgo en el cálculo del promedio que sucedería si se agruparan renglones sueltos de artículos.
 
 ##### Reporte 2: Ventas por Categoría y Producto
 
-* **Cláusula `GROUP BY pr.tipo, pr.id_producto, pr.nombre`:**
+ **Cláusula `GROUP BY pr.tipo, pr.id_producto, pr.nombre`:**
 
   * Permite jerarquizar los resultados primero por la categoría primaria del producto (`LIBRERIA`, `PAPELERIA`, `LIBRO`, `INSUMO`, `SERVICIO`) y posteriormente por el ítem específico.
 
-* **Funciones de Agregación Utilizadas:**
+ **Funciones de Agregación Utilizadas:**
 
   * `SUM(dv.cantidad)`: Volumen total de unidades/servicios despachados.
 
@@ -164,17 +163,17 @@ Brindar herramientas de Business Intelligence (BI) para el nivel gerencial. Ofre
 
 #### D. Caso de Prueba QA
 
-* **ID Prueba:** `QA-TC-02`
+ **ID Prueba:** `QA-TC-02`
 
-* **Criterio:** Validar que la Venta ID 9 (Estado `'ANULADA'`, Monto \$42.000,00 realizada por Carolina Benítez) sea descartada completamente de los totales acumulados.
+ **Criterio:** Validar que la Venta ID 9 (Estado `'ANULADA'`, Monto \$42.000,00 realizada por Carolina Benítez) sea descartada completamente de los totales acumulados.
 
-* **Resultado:** **APROBADO.** El acumulado de Carolina Benítez da exactamente \$25.200,00 (correspondiente únicamente a la Venta ID 6 CONFIRMADA), comprobando la efectividad del filtro de estado.
+ **Resultado:** **APROBADO.** El acumulado de Carolina Benítez da exactamente \$25.200,00 (correspondiente únicamente a la Venta ID 6 CONFIRMADA), comprobando la efectividad del filtro de estado.
 
 ### 2.3. CASO DE USO 3: Consulta Avanzada de Negocio — Segmentación de Clientes por Encima del Promedio General
 
-* **Archivo de Origen:** `sql/consultas/negocio_avanzado.sql`
+**Archivo de Origen:** `sql/consultas/negocio_avanzado.sql`
 
-* **Autor:** Yonathan Ivan Melgarejo (DNI: 46512688)
+**Autor:** Yonathan Ivan Melgarejo (DNI: 46512688)
 
 #### A. Propósito de Negocio
 
@@ -182,23 +181,23 @@ Identificar a los clientes "VIP" o corporativos cuyo volumen acumulado de compra
 
 #### B. Análisis y Justificación Técnica de la Consulta
 
-* **Unión Multitabla Dinámica:**
+**Unión Multitabla Dinámica:**
 
   * Conecta `personas c` (filtrado por `c.tipo_persona = 'CLIENTE'`), `ventas v`, `detalles_venta dv` y `productos p`.
 
-* **Filtros Previos a la Agregación (`WHERE`):**
+  **Filtros Previos a la Agregación (`WHERE`):**
 
   * `v.estado = 'CONFIRMADA'`: Descarta transacciones nulas antes de realizar las agrupaciones de memoria.
 
-* **Cláusula de Agrupamiento (`GROUP BY`):**
+  **Cláusula de Agrupamiento (`GROUP BY`):**
 
   * Agrupa por las columnas descriptivas obligatorias del cliente: `c.id_persona`, `c.dni_cuit`, `c.apellido`, `c.nombre`.
 
-* **Filtrado Avanzado a Nivel de Grupo (`HAVING` + Subconsulta Anidada):**
+  **Filtrado Avanzado a Nivel de Grupo (`HAVING` + Subconsulta Anidada):**
 
-  * **La clave técnica de la consulta:** La cláusula `HAVING` evalúa la función agregada `SUM(dv.cantidad * dv.precio_unitario_historico)` y la compara dinámicamente contra el valor devuelto por la subconsulta escalada.
+**La clave técnica de la consulta:** La cláusula `HAVING` evalúa la función agregada `SUM(dv.cantidad * dv.precio_unitario_historico)` y la compara dinámicamente contra el valor devuelto por la subconsulta escalada.
 
-  * **Subconsulta escalar en `HAVING`:**
+**Subconsulta escalar en `HAVING`:**
 
     ```
     SELECT AVG(sub.total_cliente)
@@ -220,19 +219,19 @@ Identificar a los clientes "VIP" o corporativos cuyo volumen acumulado de compra
 
 #### C. Ejemplo de Datos de Entrada y Salida Esperada (basado en el DML)
 
-* **Totales Calculados en DML por Cliente:**
+**Totales Calculados en DML por Cliente:**
 
-  * **Cliente 3 (Instituto San Martín S.R.L.):** Venta 3 (\$131.000) + Venta 7 ($182.000) = **\$313.000,00** (2 ventas)
+   **Cliente 3 (Instituto San Martín S.R.L.):** Venta 3 (\$131.000) + Venta 7 ($182.000) = **\$313.000,00** (2 ventas)
 
-  * **Cliente 2 (Lucía Fernández):** Venta 2 (\$28.600) + Venta 6 ($25.200) + Venta 10 ($4.300) = **\$58.100,00** (3 ventas)
+   **Cliente 2 (Lucía Fernández):** Venta 2 (\$28.600) + Venta 6 ($25.200) + Venta 10 ($4.300) = **\$58.100,00** (3 ventas)
 
-  * **Cliente 4 (Valeria Romero):** Venta 4 (\$40.900) + Venta 8 ($15.300) = **\$56.200,00** (2 ventas)
+   **Cliente 4 (Valeria Romero):** Venta 4 (\$40.900) + Venta 8 ($15.300) = **\$56.200,00** (2 ventas)
 
-  * **Cliente 1 (Martín Gómez):** Venta 1 (\$14.100) + Venta 5 ($6.900) \[Venta 9 Anulada\] = **\$21.000,00** (2 ventas)
+   **Cliente 1 (Martín Gómez):** Venta 1 (\$14.100) + Venta 5 ($6.900) \[Venta 9 Anulada\] = **\$21.000,00** (2 ventas)
 
-* **Promedio General del Negocio:** $(313.000 + 58.100 + 56.200 + 21.000) / 4 = \$448.300 / 4 =$ **\$112.075,00**.
+ **Promedio General del Negocio:** $(313.000 + 58.100 + 56.200 + 21.000) / 4 = \$448.300 / 4 =$ **\$112.075,00**.
 
-* **Resultado del Filtrado `HAVING`:** Solo el cliente cuyo total es superior a \$112.075,00 debe aparecer.
+ **Resultado del Filtrado `HAVING`:** Solo el cliente cuyo total es superior a \$112.075,00 debe aparecer.
 
 ##### Salida del Motor SQL:
 
@@ -242,11 +241,11 @@ Identificar a los clientes "VIP" o corporativos cuyo volumen acumulado de compra
 
 #### D. Caso de Prueba QA
 
-* **ID Prueba:** `QA-TC-03`
+**ID Prueba:** `QA-TC-03`
 
-* **Criterio:** Confirmar que los clientes con totales acumulados de \$58.100 (Lucía Fernández) y $56.200 (Valeria Romero) queden excluidos correctamente por no alcanzar el umbral promedio ($112.075,00).
+**Criterio:** Confirmar que los clientes con totales acumulados de \$58.100 (Lucía Fernández) y $56.200 (Valeria Romero) queden excluidos correctamente por no alcanzar el umbral promedio ($112.075,00).
 
-* **Resultado:** **APROBADO.** La subconsulta anidada realiza la agregación previa en dos niveles adecuadamente sin generar subconsultas redundantes por cada fila del conjunto de datos.
+**Resultado:** **APROBADO.** La subconsulta anidada realiza la agregación previa en dos niveles adecuadamente sin generar subconsultas redundantes por cada fila del conjunto de datos.
 
 ## 3. MATRIZ DE RESUMEN Y CONTROL DE CALIDAD (QA MATRIX)
 
