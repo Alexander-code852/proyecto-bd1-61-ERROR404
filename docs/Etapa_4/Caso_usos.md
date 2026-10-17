@@ -16,13 +16,13 @@ El presente documento detalla la especificación técnica, el análisis de negoc
 
 1. **Garantía de Reglas de Negocio:**
 
-   * **RN01 (Precio histórico):** Congelamiento y conservación de precios de venta/costo al momento de la transacción.
+    **RN01 (Precio histórico):** Congelamiento y conservación de precios de venta/costo al momento de la transacción.
 
-   * **RN02 (Stock no negativo):** Consistencia de inventario.
+    **RN02 (Stock no negativo):** Consistencia de inventario.
 
-   * **RN05 (Unicidad identificadora):** Unicidad estricta de DNI/CUIT y código de barras.
+    **RN05 (Unicidad identificadora):** Unicidad estricta de DNI/CUIT y código de barras.
 
-   * **Filtros de Estado:** Exclusión rigurosa de comprobantes con estado `'ANULADA'` o `'PENDIENTE'` en los balances acumulados gerenciales.
+    **Filtros de Estado:** Exclusión rigurosa de comprobantes con estado `'ANULADA'` o `'PENDIENTE'` en los balances acumulados gerenciales.
 
 2. **Eficiencia en la Ejecución T-SQL:**
 
