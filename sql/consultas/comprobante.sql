@@ -7,7 +7,7 @@
 --  Archivo: sql/consultas/comprobante.sql
 -- =====================================================================
 
-USE sistema_ventas_inventario;
+USE color_y_pincel;
 
 SELECT 
     v.numero_comprobante AS "Nro Comprobante",
