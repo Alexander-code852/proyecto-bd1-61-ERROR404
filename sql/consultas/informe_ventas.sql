@@ -50,6 +50,9 @@ PRINT '=============================================================';
 PRINT 'REPORTE 2: TOTAL ACUMULADO DE VENTAS POR CATEGORÍA Y PRODUCTO';
 PRINT '=============================================================';
 
+DECLARE @FechaInicio DATETIME = '2026-09-01 00:00:00';
+DECLARE @FechaFin    DATETIME = '2026-09-30 23:59:59';
+
 SELECT 
     pr.tipo AS categoria_producto,
     pr.id_producto,
